@@ -3,6 +3,6 @@
 locals {
   aws_region = "eu-west-1"
   region_tags = {
-    "region_name": "eu-west-1"
+    "region_name" : "eu-west-1"
   }
 }
