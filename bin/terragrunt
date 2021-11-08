@@ -1,0 +1,30 @@
+#!/bin/zsh
+# Execute local plan if needed
+
+AWS_PROFILE="${AWS_PROFILE:-accountA}"
+
+IMAGE="lcysimon/terragrunt:0.35.5_1.0.10"
+
+echo "============================"
+echo "Cleaning .terragrunt-cache"
+echo "============================"
+docker run --rm -it \
+  -v "$(pwd):/terragrunt" \
+  -w="/terragrunt" \
+  --entrypoint /usr/bin/find \
+  "${IMAGE}" \
+  . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \;
+
+echo "======================"
+echo " Executing Terragrunt"
+echo "======================"
+echo "terragrunt $@"
+# Run the pervious command with mounted .aws & terragrunt folders
+docker run -i --rm \
+  -v ~/.aws:/root/.aws:ro \
+  -v "$(pwd):/terragrunt" \
+  -w="/terragrunt" \
+  --entrypoint /bin/terragrunt \
+  -e AWS_PROFILE="${AWS_PROFILE}" \
+  "${IMAGE}" \
+  "$@"
