@@ -1,0 +1,122 @@
+on:
+  push:
+
+jobs:
+  check-syntax:
+    runs-on: ubuntu-latest
+    container: lcysimon/terragrunt:0.35.5_1.0.10
+    steps:
+      -
+        name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Check syntax
+        run: |
+          terragrunt hclfmt --terragrunt-check
+
+# Add as many plan as you have for aws accounts to runs them in parallel
+  plan-prod-account:
+    runs-on: ubuntu-latest
+    container: lcysimon/terragrunt:0.35.5_1.0.10
+    steps:
+      -
+        name: Check out repository code
+        uses: actions/checkout@v2
+      -
+        name: Plan on Production account
+        run: |
+          terragrunt run-all plan -lock=false --terragrunt-working-dir prod-account/ 2>&1 | tee output-prod-account.txt
+        # For multiple accounts, add more plan with different credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Production Account plan
+          path: output-prod-account.txt
+
+  plan-dev-account:
+    runs-on: ubuntu-latest
+    container: lcysimon/terragrunt:0.35.5_1.0.10
+    steps:
+      -
+        name: Check out repository code
+        uses: actions/checkout@v2
+      -
+        name: Plan on Development Account
+        run: |
+          terragrunt run-all plan -lock=false --terragrunt-working-dir dev-account/ 2>&1 | tee output-dev-account.txt
+        # For multiple accounts, add more plan with different credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Development Account plan
+          path: output-dev-account.txt
+
+  diff:
+    needs:
+      - plan-prod-account
+      - plan-dev-account
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: Production Account plan
+      - uses: actions/download-artifact@v2
+        with:
+          name: Development Account plan
+      -
+        name: full-diff of every account, easier to post
+        run: |
+          echo "================="
+          echo "Diff of Production Account"
+          echo "================="
+          cat output-prod-account.txt
+          echo "================="
+          echo "Diff of Development Account"
+          echo "================="
+          cat output-dev-account.txt
+
+
+  apply-prod-account:
+    # Only after the diff phase
+    needs:
+      - diff
+    # Only on main
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container: lcysimon/terragrunt:0.35.5_1.0.10
+    steps:
+      -
+        name: Check out repository code
+        uses: actions/checkout@v2
+      -
+        name: Apply on Production account
+        run: |
+          terragrunt run-all plan --terragrunt-non-interactive --terragrunt-working-dir prod-account/ 2>&1 | tee output-prod-account.txt
+        # For multiple accounts, add more apply with different credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  apply-dev-account:
+    # Only after the diff phase
+    needs:
+      - diff
+    # Only on main
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container: lcysimon/terragrunt:0.35.5_1.0.10
+    steps:
+      -
+        name: Check out repository code
+        uses: actions/checkout@v2
+      -
+        name: Apply on Development Account
+        run: |
+          terragrunt run-all apply --terragrunt-non-interactive --terragrunt-working-dir dev-account/ 2>&1 | tee output-dev-account.txt
+        # For multiple accounts, add more apply with different credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

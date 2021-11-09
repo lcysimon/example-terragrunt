@@ -37,7 +37,7 @@ generate "provider" {
   if_exists = "overwrite_terragrunt"
   contents = templatefile(
     "templates/providers.tf.tpl",
-    {"aws_region": local.aws_region}
+    { "aws_region" : local.aws_region }
   )
 }
 
@@ -45,10 +45,10 @@ generate "provider" {
 remote_state {
   backend = "s3"
   config = {
-    encrypt        = true
+    encrypt = true
 
     # Region as part of bucket name to avoid issue with multiple buckets
-    bucket         = "terraform-state-${get_aws_account_id()}-${local.aws_region}"
+    bucket = "terraform-state-${get_aws_account_id()}-${local.aws_region}"
     # Key prefixed with your project name, which should be unique amongs your projects if you with to save all states in the same bucket
     key            = "example-terragrunt/${path_relative_to_include()}/terraform.tfstate"
     region         = local.aws_region

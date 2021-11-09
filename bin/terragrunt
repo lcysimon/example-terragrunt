@@ -1,5 +1,6 @@
 #!/bin/zsh
 # Execute local plan if needed
+set -ex
 
 AWS_PROFILE="${AWS_PROFILE:-accountA}"
 
@@ -14,6 +15,13 @@ docker run --rm -it \
   --entrypoint /usr/bin/find \
   "${IMAGE}" \
   . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \;
+
+# Let's be civilized and format the code
+docker run --rm -it \
+  -v "$(pwd):/terragrunt" \
+  --entrypoint /bin/terragrunt \
+  "${IMAGE}" \
+  hclfmt
 
 echo "======================"
 echo " Executing Terragrunt"
