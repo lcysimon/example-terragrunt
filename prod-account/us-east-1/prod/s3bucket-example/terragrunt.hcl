@@ -1,7 +1,7 @@
 # Include root terragrunt.hcl file, expose all variables so we can reference
 # them in the inputs
 include "root" {
-  path = find_in_parent_folders()
+  path   = find_in_parent_folders()
   expose = true
 }
 
@@ -14,5 +14,5 @@ terraform {
 inputs = {
   # Get bucket name as a combination of previous variables
   bucket = lower("mybucket-${include.root.inputs.account_name}-${include.root.inputs.aws_region}")
-  tags = include.root.locals.default_tags
+  tags   = merge(include.root.locals.default_tags, { "custom_tag" : "something_custom" })
 }
