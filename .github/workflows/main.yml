@@ -94,7 +94,7 @@ jobs:
       -
         name: Apply on Production account
         run: |
-          terragrunt run-all plan --terragrunt-non-interactive --terragrunt-working-dir prod-account/ 2>&1 | tee output-prod-account.txt
+          terragrunt run-all apply --terragrunt-non-interactive --terragrunt-working-dir prod-account/ 2>&1 | tee output-prod-account.txt
         # For multiple accounts, add more apply with different credentials
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
