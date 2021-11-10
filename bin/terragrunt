@@ -4,17 +4,18 @@ set -ex
 
 AWS_PROFILE="${AWS_PROFILE:-accountA}"
 
-IMAGE="lcysimon/terragrunt:0.35.5_1.0.10"
+IMAGE="lcysimon/terragrunt:0.35.5_1.0.10_0"
 
-echo "============================"
-echo "Cleaning .terragrunt-cache"
-echo "============================"
+echo "================================================"
+echo "Cleaning .terragrunt-cache & terraform lock file"
+echo "================================================"
 docker run --rm -it \
   -v "$(pwd):/terragrunt" \
   -w="/terragrunt" \
   --entrypoint /usr/bin/find \
   "${IMAGE}" \
-  . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \;
+  . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \; \
+  && /usr/bin/find . -type f -name ".terraform.lock.hcl" -prune -exec rm -rf {} \;
 
 # Let's be civilized and format the code
 docker run --rm -it \
